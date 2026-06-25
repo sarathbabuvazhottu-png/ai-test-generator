@@ -22,7 +22,7 @@ function App() {
     setResults(null);
     try {
       const response = await fetch(
-        "http://localhost:5000/generate",
+        "https://ai-test-generator-7no6.onrender.com/generate",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -47,7 +47,7 @@ function App() {
     setRunning(true);
     try {
       const response = await fetch(
-        "http://localhost:5000/run-tests",
+        "https://ai-test-generator-7no6.onrender.com",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
