@@ -9,7 +9,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[
+    "https://dynamic-entremet-f68c83.netlify.app",
+    "http://localhost:3000",
+    "http://localhost:3001"
+])
 
 client = anthropic.Anthropic(
     api_key=os.environ.get("ANTHROPIC_API_KEY")
