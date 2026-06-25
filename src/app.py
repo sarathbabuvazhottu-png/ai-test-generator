@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import anthropic
 import os
+import subprocess
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,7 +12,7 @@ app = Flask(__name__)
 CORS(app)
 
 client = anthropic.Anthropic(
-    api_key=os.getenv("ANTHROPIC_API_KEY")
+    api_key=os.environ.get("ANTHROPIC_API_KEY")
 )
 
 
@@ -39,6 +41,22 @@ def build_prompt(code, style):
         {code}
         Return only complete working code.
         """
+
+
+@app.route("/")
+def index():
+    return jsonify({
+        "status": "running",
+        "message": "AI Test Generator API Ready!"
+    })
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({
+        "status": "running",
+        "message": "AI Test Generator API Ready!"
+    })
 
 
 @app.route("/generate", methods=["POST"])
@@ -80,30 +98,19 @@ def generate():
         }), 500
 
 
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({
-        "status": "running",
-        "message": "AI Test Generator API Ready!"
-    })
 @app.route("/run-tests", methods=["POST"])
 def run_tests():
     try:
-        import subprocess
-        import os
-
         data = request.json
         tests = data.get("tests", "")
         style = data.get("style", "basic")
 
-        # Save tests to file
         os.makedirs("generated_tests", exist_ok=True)
         test_file = f"generated_tests/test_web_{style}.py"
 
         with open(test_file, "w", encoding="utf-8") as f:
             f.write(tests)
 
-        # Run pytest
         result = subprocess.run(
             [
                 "python", "-m", "pytest",
@@ -113,23 +120,13 @@ def run_tests():
                 "--no-header"
             ],
             capture_output=True,
-            text=True,
-            cwd=r"C:\Users\sarat\ai-test-generator"
+            text=True
         )
 
         output = result.stdout
-        stderr = result.stderr
-
-        # Print for debugging
-        print("=" * 50)
-        print("PYTEST OUTPUT:")
-        print(output)
-        print("=" * 50)
-
         passed = 0
         failed = 0
 
-        # Count from verbose output
         for line in output.split("\n"):
             if " PASSED" in line:
                 passed += 1
@@ -137,7 +134,6 @@ def run_tests():
                 failed += 1
 
         total = passed + failed
-
         pass_rate = str(round(
             (passed / total * 100)
             if total > 0 else 0, 1
@@ -156,17 +152,12 @@ def run_tests():
         })
 
     except Exception as e:
-        print("ERROR:", str(e))
         return jsonify({
             "error": str(e)
         }), 500
 
 
 if __name__ == "__main__":
-    print("\n🚀 Flask Server Starting...")
-    print("=" * 40)
-    print("Server running at:")
-    print("http://localhost:5000")
-    print("=" * 40)
     port = int(os.environ.get("PORT", 5000))
+    print(f"\n🚀 Flask Starting on port {port}...")
     app.run(debug=False, host="0.0.0.0", port=port)
